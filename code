@@ -1,0 +1,104 @@
+GENOMESTUDIO:
+
+#Go to the following taps:
+
+Analysis > Report  and pick the last one which will take you into the reports 
+
+#Towards the end, pick the following columns:
+SNP
+Chr
+Position
+SampleID
+Top Allele1
+Top Allele 2
+
+#Do one sample at a time and it will print you a final report for each sample! If you don't do this and decide to do all of the samples in one report, then it won't fit the excel file! 
+#Select between rows" 319556 - 653403 which only contain RSID's. This is after sorting by the first column. 
+
+
+
+
+
+----------------------------------Pre-Processing the RAW file---------------------------
+
+#Make Genotype the first line, then:
+#remove all the lines with "D" and "I"
+#Then sort the file by RSID, and make sure each row has only one RSID value
+#Then align the file in following column headers in this order: RSID/Chromosome/Position/Genotype
+#Then move it to the Database folder for analysis and remove unnecessary files 
+
+grep -v "D" ./DEMO.txt  > ./demo1.txt
+grep -v "I" ./demo1.txt > ./demofinal.txt
+rm ./DEMO.txt ./demo1.txt
+
+#Take the d2 and make sure that there is only one RSID per row! Then save the file with the following name "Rawdata.txt"
+sed 's/,/  /g' ./Rawdata_semi.txt > ./Rawdata.txt 
+rm ./Rawdata_semi.txt
+######################AT THIS POINT MAKE SURE OF THE FOLLOWING########################
+#1. NO "I" or "D" in the Genotype Column
+#2. Only one RSID in the RSID column
+#3. Make sure you have the following column headers: "RSID/Chromosome/Position/Genotype"
+#3. Merge the two genotypes that are in separate columns in excel, using the command "=Concatenate(E,F)"
+
+
+
+
+
+
+-------------------------Generating ANCESTRY Raw File-----------------------------------
+
+#Take the genotype data and use the "standardize" function to standardize it to be used with the DIYDodecadLinux64 program! This is done in R
+R
+setwd("/home/haider/Desktop/DATABASE 54/")
+source('standardize.r')
+standardize("Rawdata.txt") #this creates a file called "genotype.txt"
+
+#copy "genotype.txt" to all of the folders:
+for i in ./*; do cp -v genotype.txt $i; done
+
+#Run DIY program in each of the folder with individual databases:
+for i in ./*; do (cd ./$i/ && ./DIYDodecadLinux64 *.par); done
+
+
+
+
+
+
+---------------------------After executing DIYdodecadLinux64----------------------------
+#PRE-PROCESSING THE FILE:
+
+#this will remove all spaces and line the text in each file
+for i in ./*; do cat ./$i/genomewide.txt | sed 's/  / /g' | sed 's/  / /g' | sed 's/  / /g'| sed 's/  / /g'| sed 's/  / /g'| sed 's/  / /g'| sed 's/  / /g'| sed 's/  / /g'| sed 's/  / /g'| sed 's/  / /g' > ./$i/genomewide2.txt; done
+
+#Remove whitespace:
+for i in ./*; do sed -e 's/^[ \t]*//' ./$i/genomewide2.txt > ./$i/genomewide3.txt; done
+
+
+#AMALGAMATION:
+#get the ancestry stuff from all databases in one file
+head -n2 ./*/genomewide3.txt > ./amalgamate_ancestry.txt 
+
+#remove empty lines from the beginning:
+sed -i '/^$/d' amalgamate_ancestry.txt 
+
+##this code will print everything from third column onwards!
+awk '{$1=$2=""; print$0}' ./amalgamate_ancestry.txt > ./semifinal.txt 
+
+#this will remove all lines with "<==" leaving only the text that you need!
+grep -v "<==" ./semifinal.txt  > ./ancestry_semi.txt 
+
+#This will remove uncesseary spaces so everything lines up. 
+sed -e 's/^[ \t]*//' ./ancestry_semi.txt > ./ancestry_information.txt
+
+
+#remove unnecessary files
+rm ./amalgamate_ancestry.txt
+rm ./semifinal.txt 
+rm ./ancestry_semi.txt
+for i in ./*;do rm ./genotype.txt ./$i/genomewide.txt ./$i/genomewide2.txt ./$i/genomewide3.txt; done
+for i in ./*;do rm ./$i/genotype.txt; done
+
+
+
+
+

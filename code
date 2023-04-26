@@ -15,7 +15,7 @@ Top Allele 2
 #Do one sample at a time and it will print you a final report for each sample! If you don't do this and decide to do all of the samples in one report, then it won't fit the excel file! 
 #Select between rows" 319556 - 653403 which only contain RSID's. This is after sorting by the first column. 
 
-@test1231413
+
 
 
 
